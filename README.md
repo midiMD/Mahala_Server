@@ -1,2 +1,8 @@
 # Neighborly
-suc da zuc
+
+# Dependencies
+
+## BackEnd
+django
+djangorestframework
+
