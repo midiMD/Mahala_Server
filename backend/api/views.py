@@ -1,24 +1,13 @@
 from django.shortcuts import get_object_or_404
-from django.http import Http404
+from json import JSONDecodeError
+from django.http import Http404, JsonResponse
 from django.contrib.auth.decorators import login_required
 from rest_framework import views, status
 from rest_framework.response import Response
+from rest_framework.parsers import JSONParser
+
 from . import models
-from .serializers import ProfileSerializer,ItemSerializer
-
-class ProfileView(views.APIView):
-    def get(self, request, pk, format=None):
-        profile = get_object_or_404(models.Profile, pk=pk)
-        serializer = ProfileSerializer(profile)
-        return Response(serializer.data)
-
-    def put(self, request, pk, format=None):
-        profile = get_object_or_404(models.Profile, pk=pk)
-        serializer = ProfileSerializer(profile, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+from .serializers import UserSerializer,ItemSerializer
 
 
 from geopy.distance import geodesic  # To calculate distance
@@ -44,3 +33,17 @@ class ItemsView(views.APIView):
 
         serializer = ItemSerializer(nearby_items, many=True)  # Serialize nearby items
         return Response(serializer.data)
+
+class UserRegistrationView(views.APIView):
+    def post(self, request):
+        try:
+            data = JSONParser().parse(request)
+            serializer = UserSerializer(data=data)
+            serializer.is_valid(raise_exception=True)  # Raise error for invalid data
+            
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except JSONDecodeError:
+            return JsonResponse({"result": "error","message": "Json decoding error"}, status= 400)
+
+        

@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User,AbstractBaseUser, BaseUserManager
-
+from .utils import *
 
 from django.db import models
 import requests  # Assuming you'll use 'requests' for API calls
@@ -8,54 +8,65 @@ import requests  # Assuming you'll use 'requests' for API calls
 class House(models.Model):
     postcode = models.CharField(max_length=10)
     house_number = models.CharField(max_length=10)
-    latitude = models.FloatField(null=True, blank=True)
-    longitude = models.FloatField(null=True, blank=True)
+    street = models.CharField(max_length=200)
 
+    apartment_number = models.CharField(max_length=10, null=True, blank=True)
+
+    place_id = models.CharField(primary_key=True, max_length=100,unique=True) # Google maps place ID
+    lat = models.FloatField(null=True, blank=True)
+    lng = models.FloatField(null=True, blank=True)
+    
     def save(self, *args, **kwargs):
-        if not self.latitude or not self.longitude:
-            self.fetch_coordinates()  # Call the coordinate fetching function
+        if not self.lat or not self.lng:
+            self._fetch_coordinates()  # Call the coordinate fetching function
         super().save(*args, **kwargs)
 
-    def fetch_coordinates(self):
-        # You'll need to replace "YOUR_API_KEY" with a valid API key
-        api_url = f"https://api.example.com/geocode?address={self.postcode},{self.house_number}&key=YOUR_API_KEY"
+    def _fetch_coordinates(self):
+        address = f"{self.house_number}, {self.street}, {self.postcode}" 
+        api_url = f"{GOOGLE_MAPS_URL}country=gb&address={address}&key={GOOGLE_API_KEY}"
         response = requests.get(api_url)
 
         if response.status_code == 200:
             data = response.json()
-            # Assuming your response provides 'lat' and 'lng' in the data...
-            self.latitude = data.get('lat')
-            self.longitude = data.get('lng')
+            self.place_id= data.get('results')[0].get('place_id')
+            self.lat, self.lng = data.get('results')[0].get('geometry').get('location').get('lat'), data.get('results')[0].get('geometry').get('location').get('lng')
         else:
-            # Handle API errors here
+            print(response.text)
             pass
-
-class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    house = models.ForeignKey(House, on_delete=models.PROTECT)  # foreign key in House table. on_delete: if there is some other user using that House record, then keep it, otherwise, delete the House record
+    
 
     def __str__(self):
-        return f"{self.user.username}'s Profile"
+        address_parts = [self.house_number, self.street, self.postcode]
+        # Add apartment number if it exists
+        if self.apartment_number:
+            address_parts.insert(0, f"Apt. {self.apartment_number}") 
+        return ", ".join(address_parts)
 
 class Item(models.Model):
-    owner = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
     price_per_day = models.DecimalField(max_digits=6, decimal_places=2)
     name = models.CharField(max_length=100)
     category = models.CharField(max_length=50)
     image = models.ImageField(upload_to='item_images')
+    def __str__(self) -> str:
+        return f'Item {self.name}'
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, username, password=None):
+    def create_user(self, email, username, password,house):
         if not email:
             raise ValueError("Users must have an email address")
         if not username:
             raise ValueError("Users must have a username")
+        if not password:
+            raise ValueError("Users must have a password")
 
         user = self.model(
             email=self.normalize_email(email),
             username=username,
+            house= house,
         )
+    
         user.set_password(password)  # Hashes the password
         user.save(using=self._db)
         return user
@@ -82,14 +93,14 @@ class User(AbstractBaseUser):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
-
+    house = models.ForeignKey(House, on_delete=models.PROTECT) 
     USERNAME_FIELD = "email"  # Email is the login identifier
-    REQUIRED_FIELDS = ["username"]  
+    REQUIRED_FIELDS = ["username","email"]  
 
     objects = UserManager()
 
     def __str__(self):
-        return self.email
+        return f'{self.username} || {self.email}'
 
     def has_perm(self, perm, obj=None):
         return self.is_admin
