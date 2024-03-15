@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import House, Item,User
+from .models import House, Item, CustomUser
 from rest_framework.fields import EmailField,CharField
 from .utils import *
 
@@ -19,12 +19,10 @@ class HouseSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    password = CharField(write_only=True,required =True)
-    email = EmailField(required=True)
-    full_name = CharField(required=True)
+
     house = HouseSerializer(required=True,many = False)
     class Meta:
-        model = User
+        model = CustomUser
         fields = ("full_name", "email", "password","house")
 
     def create(self, validated_data):
@@ -32,9 +30,42 @@ class UserSerializer(serializers.ModelSerializer):
 
         house, _ = House.objects.get_or_create(**house_data)  # Create if needed
         house.save()
-        user = User.objects.create_user(**validated_data, house=house)
+        user = CustomUser.objects.create_user(**validated_data, house=house)
         user.save()
         return user
+
+from django.contrib.auth import authenticate
+
+
+# class LoginSerializer(serializers.Serializer):
+#     """
+#     This serializer defines two fields for authentication:
+#       * username
+#       * password.
+#     It will try to authenticate the user with when validated.
+#     """
+#     email = serializers.EmailField()
+#     password = serializers.CharField(write_only=True)
+
+#     def validate(self, data):
+#         username = data.get('email')
+#         password = data.get('password')
+
+#         if username and password:
+#             print(username)
+#             print(password)
+#             print(self.context.get("request"))
+#             user = authenticate(request=self.context.get('request'),
+#                                 username=username, password=password)
+#             if not user:
+#                 msg = ('Unable to log in with provided credentials.')
+#                 raise serializers.ValidationError(msg, code='authorization')
+#         else:
+#             msg = ('Must include "username" and "password".')
+#             raise serializers.ValidationError(msg, code='authorization')
+
+#         data['user'] = user
+#         return data
     
 
 class ItemSerializer(serializers.ModelSerializer):
@@ -46,7 +77,7 @@ class ItemSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
 
         owner_data = validated_data.pop('owner')
-        owner, _ = User.objects.get(owner_data)
+        owner, _ = CustomUser.objects.get(owner_data)
         item = Item.objects.create(owner=owner, **validated_data)
         return item
 

@@ -1,11 +1,11 @@
 from django.db import models
-from django.contrib.auth.models import User,AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from .utils import *
 
 from django.db import models
 import requests  # Assuming you'll use 'requests' for API calls
 
-class House(models.Model):
+class House(models.Model):  
     postcode = models.CharField(max_length=10)
     house_number = models.CharField(max_length=10)
     street = models.CharField(max_length=200)
@@ -42,14 +42,7 @@ class House(models.Model):
             address_parts.insert(0, f"Apt. {self.apartment_number}") 
         return ", ".join(address_parts)
 
-class Item(models.Model):
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
-    price_per_day = models.DecimalField(max_digits=6, decimal_places=2)
-    name = models.CharField(max_length=100)
-    category = models.CharField(max_length=50)
-    image = models.ImageField(upload_to='item_images')
-    def __str__(self) -> str:
-        return f'Item {self.name}'
+
 
 
 class UserManager(BaseUserManager):
@@ -84,7 +77,7 @@ class UserManager(BaseUserManager):
         return user
 
 
-class User(AbstractBaseUser):
+class CustomUser(AbstractBaseUser):
     email = models.EmailField(verbose_name="email", max_length=60, unique=True)
     full_name = models.CharField(max_length=60)
     date_joined = models.DateTimeField(verbose_name="date joined", auto_now_add=True)
@@ -96,7 +89,7 @@ class User(AbstractBaseUser):
     is_verified = models.BooleanField(default=False) # whether they have verified their address
     house = models.ForeignKey(House, on_delete=models.PROTECT) 
     USERNAME_FIELD = "email"  # Email is the login identifier
-    REQUIRED_FIELDS = ["full_name","email"]  
+    REQUIRED_FIELDS = ["full_name"]  
 
     objects = UserManager()
 
@@ -111,3 +104,12 @@ class User(AbstractBaseUser):
 
     def is_verified(self):
         return self.is_verified
+    
+class Item(models.Model):
+    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    price_per_day = models.DecimalField(max_digits=6, decimal_places=2)
+    name = models.CharField(max_length=100)
+    category = models.CharField(max_length=50)
+    image = models.ImageField(upload_to='item_images')
+    def __str__(self) -> str:
+        return f'Item {self.name}'

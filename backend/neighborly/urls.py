@@ -10,5 +10,6 @@ urlpatterns = router.urls
 urlpatterns += [
     path('admin/', admin.site.urls),
     path('register/', api_views.UserRegistrationView.as_view()),
+    path('login/', api_views.LoginView.as_view()),
 
 ]

@@ -2,18 +2,20 @@ from django.shortcuts import get_object_or_404
 from json import JSONDecodeError
 from django.http import Http404, JsonResponse
 from django.contrib.auth.decorators import login_required
-from rest_framework import views, status
+from rest_framework import views, status,permissions
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
-
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.authtoken.models import Token
+from django.contrib.auth.models import update_last_login
 from . import models
 from .serializers import UserSerializer,ItemSerializer
-
 
 from geopy.distance import geodesic  # To calculate distance
 
 @login_required
 class ItemsView(views.APIView):
+    permission_classes = (permissions.IsAuthenticated, )
     def get(self, request):
         # Get user's house from session (replace 'house_id' with your session key)
         user_house_id = request.session.get('house_id')
@@ -35,15 +37,37 @@ class ItemsView(views.APIView):
         return Response(serializer.data)
 
 class UserRegistrationView(views.APIView):
+    '''
+    To DO: Create token upon succesful registration
+    '''
     def post(self, request):
         try:
             data = JSONParser().parse(request)
             serializer = UserSerializer(data=data)
             serializer.is_valid(raise_exception=True)  # Raise error for invalid data
-            
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except JSONDecodeError:
-            return JsonResponse({"result": "error","message": "Json decoding error"}, status= 400)
+            return Response(serializer.errors,status = status.HTTP_400_BAD_REQUEST)
 
-        
+
+class LoginView(views.APIView):
+    # This view should be accessible also for unauthenticated users.
+    permission_classes = (permissions.AllowAny,)
+    authentication_classes = [TokenAuthentication]
+    def post(self, request):
+        try:
+            data = JSONParser().parse(request)
+            user = get_object_or_404(models.CustomUser,email = data['email'])
+            print(user)
+            if not user.check_password(data['password']):
+                return Response({"detail":"Not found."},status = status.HTTP_404_NOT_FOUND)
+            # serializer = LoginSerializer(data=data, context={'request': request})
+            # serializer.is_valid(raise_exception=True)
+            # user = serializer.validated_data['user']
+            # update_last_login(None, user)
+            token, created = Token.objects.get_or_create(user=user)
+            serializer = UserSerializer(instance = user)
+            return Response({"status": status.HTTP_200_OK, "Token": token.key,"user": serializer.data})
+        except JSONDecodeError:
+            return Response(serializer.errors,status = status.HTTP_400_BAD_REQUEST)
