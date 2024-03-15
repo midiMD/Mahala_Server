@@ -21,11 +21,11 @@ class HouseSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     password = CharField(write_only=True,required =True)
     email = EmailField(required=True)
-    username = CharField(required=True)
+    full_name = CharField(required=True)
     house = HouseSerializer(required=True,many = False)
     class Meta:
         model = User
-        fields = ("username", "email", "password","house")
+        fields = ("full_name", "email", "password","house")
 
     def create(self, validated_data):
         house_data = validated_data.pop('house')

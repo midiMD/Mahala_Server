@@ -11,4 +11,4 @@ class HouseAdmin(admin.ModelAdmin):
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'username', 'email', 'password')
+    list_display = ('id', 'full_name', 'email', 'password')
