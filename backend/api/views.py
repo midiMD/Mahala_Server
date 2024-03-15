@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from rest_framework import views, status,permissions
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
-from rest_framework.authentication import TokenAuthentication
+from rest_framework.authentication import TokenAuthentication,SessionAuthentication
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import update_last_login
 from . import models
@@ -13,13 +13,16 @@ from .serializers import UserSerializer,ItemSerializer
 
 from geopy.distance import geodesic  # To calculate distance
 
-@login_required
-class ItemsView(views.APIView):
-    permission_classes = (permissions.IsAuthenticated, )
+class AvailableItemsView(views.APIView):
+    authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
+    permission_classes = [permissions.IsAuthenticated]
+    '''
+    must have in Header of request Authorization: Token <token value>
+    '''
     def get(self, request):
-        # Get user's house from session (replace 'house_id' with your session key)
-        user_house_id = request.session.get('house_id')
-        user_house = get_object_or_404(models.House, pk=user_house_id)
+        user= request.user #if token is valid, it will return the user
+
+        user_house = user.house
 
         # Get all items
         all_items = models.Item.objects.all()
@@ -62,12 +65,16 @@ class LoginView(views.APIView):
             print(user)
             if not user.check_password(data['password']):
                 return Response({"detail":"Not found."},status = status.HTTP_404_NOT_FOUND)
-            # serializer = LoginSerializer(data=data, context={'request': request})
-            # serializer.is_valid(raise_exception=True)
-            # user = serializer.validated_data['user']
-            # update_last_login(None, user)
             token, created = Token.objects.get_or_create(user=user)
+            update_last_login(user=user)
             serializer = UserSerializer(instance = user)
             return Response({"status": status.HTTP_200_OK, "Token": token.key,"user": serializer.data})
         except JSONDecodeError:
             return Response(serializer.errors,status = status.HTTP_400_BAD_REQUEST)
+
+class LogoutView(views.APIView):
+    authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
+    permission_classes = [permissions.IsAuthenticated]
+    def get(self,request):
+        request.user.auth_token.delete()
+        return Response(status = status.HTTP_200_OK)

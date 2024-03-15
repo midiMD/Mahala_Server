@@ -12,3 +12,7 @@ class HouseAdmin(admin.ModelAdmin):
 @admin.register(CustomUser)
 class UserAdmin(admin.ModelAdmin):
     list_display = ('id', 'full_name', 'email', 'password')
+
+@admin.register(Item)
+class ItemAdmin(admin.ModelAdmin):
+    list_display = ('id', 'owner', 'price_per_day', 'name', 'category', 'image')
