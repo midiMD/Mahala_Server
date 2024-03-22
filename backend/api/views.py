@@ -66,7 +66,7 @@ class LoginView(views.APIView):
             if not user.check_password(data['password']):
                 return Response({"detail":"Not found."},status = status.HTTP_404_NOT_FOUND)
             token, created = Token.objects.get_or_create(user=user)
-            update_last_login(user=user)
+            update_last_login(user=user,sender = self)
             serializer = UserSerializer(instance = user)
             return Response({"status": status.HTTP_200_OK, "Token": token.key,"user": serializer.data})
         except JSONDecodeError:
