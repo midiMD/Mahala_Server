@@ -23,7 +23,9 @@ class UserSerializer(serializers.ModelSerializer):
     house = HouseSerializer(required=True,many = False)
     class Meta:
         model = CustomUser
-        fields = ("full_name", "email", "password","house")
+        fields = ("id","full_name", "email", "password","house")
+        extra_kwargs = {'password': {'write_only': True}}
+
 
     def create(self, validated_data):
         house_data = validated_data.pop('house')
@@ -33,6 +35,7 @@ class UserSerializer(serializers.ModelSerializer):
         user = CustomUser.objects.create_user(**validated_data, house=house)
         user.save()
         return user
+
 
 from django.contrib.auth import authenticate
 

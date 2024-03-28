@@ -13,5 +13,6 @@ urlpatterns += [
     path('login/', api_views.LoginView.as_view()),
     path('logout/', api_views.LogoutView.as_view()),
     path('view-available-items/', api_views.AvailableItemsView.as_view()),
+    path('main/', api_views.UserView.as_view()),
 
 ]

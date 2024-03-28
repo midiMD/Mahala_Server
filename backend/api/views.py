@@ -39,6 +39,24 @@ class AvailableItemsView(views.APIView):
         serializer = ItemSerializer(nearby_items, many=True)  # Serialize nearby items
         return Response(serializer.data)
 
+class UserView(views.APIView):
+    # First app call if a token is present
+    authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
+    permission_classes = [permissions.IsAuthenticated]
+    '''
+    must have in Header of request Authorization: Token <token value>
+    '''
+    def get(self, request):
+        user= request.user #if token is valid, it will return the user
+
+        user_house = user.house 
+
+        # Get all items
+        
+        serializer = UserSerializer(user,context = {'request': request})  # Serialize nearby items
+        response = Response(serializer.data)
+        return response
+
 class UserRegistrationView(views.APIView):
     '''
     To DO: Create token upon succesful registration
