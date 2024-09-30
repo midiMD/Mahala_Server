@@ -11,6 +11,6 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'the_local_lend.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mahala_server.settings')
 
 application = get_wsgi_application()
