@@ -1,7 +1,7 @@
 
 # Register your models here.
 from django.contrib import admin
-from .models import  House, Item,CustomUser
+from .models import  House, Item,CustomUser, ItemImage
 
 
 
@@ -11,8 +11,12 @@ class HouseAdmin(admin.ModelAdmin):
 
 @admin.register(CustomUser)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'full_name', 'email', 'password')
+    list_display = ('id', 'full_name', 'email', 'password',"house")
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ('id', 'owner', 'price_per_day', 'name', 'category', 'image')
+    list_display = ('id', 'owner', 'price_per_day', 'title', 'category')
+
+@admin.register(ItemImage)
+class ItemImageAdmin(admin.ModelAdmin):
+    list_display = ('id', 'item', 'is_thumbnail', 'image')

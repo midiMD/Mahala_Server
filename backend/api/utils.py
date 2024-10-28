@@ -1,7 +1,9 @@
+from dataclasses import dataclass
 import requests
+import os
 
-
-GOOGLE_API_KEY = 'AIzaSyDse4apEDFgIFDnX-6qyVq_3u1A30tFNbk'
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+#print("Google API key : ", GOOGLE_API_KEY)
 GOOGLE_MAPS_URL = "https://maps.googleapis.com/maps/api/geocode/json?" # Base URL for Google geocoding API
 def fetch_house_info(postcode, street, house_number):
     address = f"{house_number}, {street}, {postcode}" 
@@ -16,4 +18,11 @@ def fetch_house_info(postcode, street, house_number):
     else:
         print(response.text)
         return None
+@dataclass
+class MarketItem():
+    distance: float
+    title: str
+    owner_name: str
+    price_per_day: float
+    image: str
     

@@ -1,3 +1,4 @@
+import boto3
 from django.shortcuts import get_object_or_404
 from json import JSONDecodeError
 from django.http import Http404, JsonResponse
@@ -8,12 +9,14 @@ from rest_framework.parsers import JSONParser
 from rest_framework.authentication import TokenAuthentication,SessionAuthentication
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import update_last_login
+
+from api.utils import MarketItem
 from . import models
-from .serializers import UserSerializer,ItemSerializer
+from .serializers import UserSerializer,ItemSerializer, MarketItemSerializer
 
 from geopy.distance import geodesic  # To calculate distance
-
-class AvailableItemsView(views.APIView):
+CATCHMENT_RADIUS = 100000 # in meters 
+class MarketView(views.APIView):
     authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
     permission_classes = [permissions.IsAuthenticated]
     '''
@@ -24,19 +27,25 @@ class AvailableItemsView(views.APIView):
 
         user_house = user.house
 
-        # Get all items
+        # Get all items. Improvement would be to get the owners that are in the required area then filter the Items by those owners
         all_items = models.Item.objects.all()
-        nearby_items = []
+        nearby_items = []  # List of nearby items
 
         # Calculate distance for each item's owner's house
         for item in all_items:
+            if item.owner == user:
+                continue
             owner_house = item.owner.house
             if owner_house:  # Check if owner has a house
                 distance = geodesic(user_house.coordinates, owner_house.coordinates).m
-                if distance <= 300:
-                    nearby_items.append(item)
+                if distance <= CATCHMENT_RADIUS:
+                    #get thumbnail image from ItemImage table
 
-        serializer = ItemSerializer(nearby_items, many=True)  # Serialize nearby items
+                    market_item = MarketItem(distance = distance,title=item.title, owner_name=item.owner.full_name, price_per_day=item.price_per_day, image=item.image)
+                    nearby_items.append(market_item)
+
+        # Django Rest Framework can automatically deal with single object inputed and a list of them, we don't need to modify the serializer
+        serializer = MarketItemSerializer(nearby_items, many=True)  # Serialize nearby items
         return Response(serializer.data)
 
 class UserView(views.APIView):
@@ -95,4 +104,43 @@ class LogoutView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
     def get(self,request):
         request.user.auth_token.delete()
+        return Response(status = status.HTTP_200_OK)
+
+class AddItemView(views.APIView):
+    authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
+    permission_classes = [permissions.IsAuthenticated]
+    def post(self, request):
+        try:
+            data = JSONParser().parse(request)
+            print(f'User: {request.user}')
+            serializer = ItemSerializer(data=data)
+            serializer.is_valid(raise_exception=True)  # Raise error for invalid data
+            print("Add item validated")
+            serializer.save(owner = request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except JSONDecodeError:
+            print(serializer.errors)
+            return Response(serializer.errors,status = status.HTTP_400_BAD_REQUEST)
+
+class TestView(views.APIView):
+    def get(self,request):
+        # get the first record in ItemImage table
+        item_image = models.ItemImage.objects.first()
+        s3 = item_image.image.storage
+        file_name = item_image.image.name
+        print(f's3:{s3}')
+        print(f'file name: {file_name}')
+        if s3.exists(file_name):
+            print(f'Image {file_name} exists in s3')
+        else:
+            print("image doesn't exist")
+                  
+        
+        
+        # try:
+        #     s3.connection.meta.client.head_object(Bucket= "mahala-item-images",Key = file_name)
+        #     print(f'Image {file_name} exists in s3')
+        # except Exception as e:
+        #     print(e)
+        #     print("Doesn't exist")
         return Response(status = status.HTTP_200_OK)

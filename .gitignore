@@ -5,6 +5,13 @@ __pycache__/
 
 # C extensions
 *.so
+# static files
+staticfiles/
+#database
+migrations/
+*.sqlite3
+fixtures/
+
 
 # Distribution / packaging
 .Python

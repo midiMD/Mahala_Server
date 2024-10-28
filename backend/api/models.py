@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from .utils import *
@@ -9,7 +10,6 @@ class House(models.Model):
     postcode = models.CharField(max_length=10)
     house_number = models.CharField(max_length=10)
     street = models.CharField(max_length=200)
-
     apartment_number = models.CharField(max_length=10, null=True, blank=True)
 
     place_id = models.CharField(primary_key=True, max_length=100,unique=True) # Google maps place ID
@@ -47,6 +47,7 @@ class House(models.Model):
 
 class UserManager(BaseUserManager):
     def create_user(self, email, full_name, password,house):
+
         if not email:
             raise ValueError("Users must have an email address")
         if not full_name:
@@ -65,14 +66,16 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, full_name, password):
-        user = self.create_user(
+        
+        user = self.model(
             email=self.normalize_email(email),
             full_name=full_name,
-            password=password,
+            house = House.objects.get(pk="ChIJOyVl-TEOdkgR2CgZ9IpKAfI"), #example house, first house
         )
         user.is_admin = True
         user.is_staff = True
         user.is_superuser = True
+        user.set_password(password)
         user.save(using=self._db)
         return user
 
@@ -87,7 +90,7 @@ class CustomUser(AbstractBaseUser):
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False) # whether they have verified their address
-    house = models.ForeignKey(House, on_delete=models.PROTECT) 
+    house = models.ForeignKey(House, on_delete=models.PROTECT)  #we allow no house for now
     USERNAME_FIELD = "email"  # Email is the login identifier
     REQUIRED_FIELDS = ["full_name"]  
 
@@ -108,8 +111,41 @@ class CustomUser(AbstractBaseUser):
 class Item(models.Model):
     owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     price_per_day = models.DecimalField(max_digits=6, decimal_places=2)
-    name = models.CharField(max_length=100)
+    date_added = models.DateTimeField(verbose_name="date added", auto_now_add=True)
+    title = models.CharField(max_length=100,null = False)    
+    description = models.TextField(null = True)
     category = models.CharField(max_length=50)
-    image = models.ImageField(upload_to='item_images')
     def __str__(self) -> str:
-        return f'Item {self.name}'
+        return f'Item {self.title}'
+    
+def item_image_upload_path(instance, filename):
+    # Extract the original file extension
+    extension = filename.split('.')[-1]
+    # Create a unique filename using UUID
+    new_filename = f"{instance.id}.{extension}"
+    # Organize images by item ID
+    return f"items/{instance.item.id}/images/{new_filename}"
+class ItemImage(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    item = models.ForeignKey(Item, related_name='images', on_delete=models.CASCADE, db_index=True)
+    is_thumbnail = models.BooleanField(default=False)
+    image = models.ImageField(upload_to=item_image_upload_path)
+    display_order = models.IntegerField(default=0)
+    #delete from s3 as well when deleting image record from db
+    def delete(self, *args, **kwargs):
+        # Method 1: Override delete method
+        # Delete the file from S3 before deleting the record
+        print(f"deleting {self.image.name} from s3")
+        if self.image:
+            # Get the storage backend
+            storage = self.image.storage
+            file_name = self.image.name
+            try:
+                # storage.Object("mahala-item-images", file_name).load()
+                storage.delete(file_name)
+                print(f'Image {file_name} has been deleted from s3')
+            except Exception as e:
+                print(e)
+        
+        # Call the parent class's delete method
+        super().delete(*args, **kwargs)

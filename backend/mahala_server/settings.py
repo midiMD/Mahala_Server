@@ -10,7 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-j&x6@5=)qm_nok0g^i2)_$&+*)a*ga45)7h$=b#qz9$54$@#))'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -120,7 +123,41 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = 'static/'
+
+# Static files (CSS, JavaScript, Images)
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+
+ITEM_IMAGES_STORAGE = "api.storage.S3ItemImagesStorage"
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_USE_SSL=False
+AWS_S3_URL = os.getenv("AWS_S3_URL")
+AWS_S3_FILE_OVERWRITE = True # when uploaded, files with the same name will overwrite each other
+AWS_ACCESS_URL = AWS_S3_URL+"/"+AWS_STORAGE_BUCKET_NAME
+
+'''
+For models with ImageField or FileField, files will automatically be uploaded to S3 with the configured settings. 
+The media files will have URLs pointing to the S3 bucket, while static files are served locally.
+'''
+STORAGES = {
+    'staticfiles': {
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        'LOCATION': STATIC_URL,
+    },
+    "default": {
+        "BACKEND": ITEM_IMAGES_STORAGE,
+        # 'OPTIONS': {
+        #     'bucket_name': AWS_STORAGE_BUCKET_NAME,
+        #     'custom_domain': AWS_ACCESS_URL,
+        #     "access_id": AWS_ACCESS_KEY_ID,
+        #     "secret_access_key": AWS_SECRET_ACCESS_KEY
+        #     }
+    },
+    
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field

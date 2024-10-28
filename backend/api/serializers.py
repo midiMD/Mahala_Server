@@ -3,6 +3,10 @@ from .models import House, Item, CustomUser
 from rest_framework.fields import EmailField,CharField
 from .utils import *
 
+'''
+Serializer : Python Object -> JSON
+
+'''
 class HouseSerializer(serializers.ModelSerializer):
     postcode = CharField(max_length=10)
     house_number = CharField(max_length=10)
@@ -69,19 +73,31 @@ from django.contrib.auth import authenticate
 
 #         data['user'] = user
 #         return data
-    
+#in inventory tab
+
+
 
 class ItemSerializer(serializers.ModelSerializer):
-    owner = UserSerializer(many=False,required =True)  # Read-only for owner field
-    
+    #owner = UserSerializer(many=False,required =True)  # Read-only for owner field
+    owner = serializers.ReadOnlyField(source='owner.username')
     class Meta:
         model = Item
-        fields = ('id', 'owner', 'price_per_day', 'name', 'category', 'image')
+        fields = ['id', 'owner', 'price_per_day', 'title',"description",'category', 'image',"date_added"]
+        read_only_fields = ["owner"]
     def create(self, validated_data):
-
-        owner_data = validated_data.pop('owner')
-        owner, _ = CustomUser.objects.get(owner_data)
-        item = Item.objects.create(owner=owner, **validated_data)
+        # owner_data = validated_data.pop('owner')
+        # owner, _ = CustomUser.objects.get(owner_data)
+        item = Item.objects.create(**validated_data)
         return item
+class MarketItemSerializer(serializers.Serializer):
+    # Django Rest Framework can automatically deal with single object inputed and a list of them, we don't need to modify the serializer
+    owner_name = serializers.CharField(read_only=True)
+    id = serializers.IntegerField(read_only=True)
+    title = serializers.CharField(read_only=True)
+    price_per_day = serializers.FloatField(read_only=True)
+    image = serializers.CharField(read_only=True)   
+    distance = serializers.FloatField(read_only=True)
+    
+
 
 
