@@ -10,7 +10,8 @@ from rest_framework.authentication import TokenAuthentication,SessionAuthenticat
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import update_last_login
 
-from api.utils import MarketItem
+from api.utils import MarketViewItem
+from api.storage import S3ItemImagesStorage
 from . import models
 from .serializers import UserSerializer,ItemSerializer, MarketItemSerializer
 
@@ -26,22 +27,29 @@ class MarketView(views.APIView):
         user= request.user #if token is valid, it will return the user
 
         user_house = user.house
+        search_query = request.GET.get('search_query')
+        category = request.GET.get('category')
 
         # Get all items. Improvement would be to get the owners that are in the required area then filter the Items by those owners
         all_items = models.Item.objects.all()
         nearby_items = []  # List of nearby items
-
+        s3 = S3ItemImagesStorage()
         # Calculate distance for each item's owner's house
         for item in all_items:
             if item.owner == user:
                 continue
             owner_house = item.owner.house
             if owner_house:  # Check if owner has a house
-                distance = geodesic(user_house.coordinates, owner_house.coordinates).m
+                distance = geodesic((user_house.lat, user_house.lng), (owner_house.lat, owner_house.lng)).m
                 if distance <= CATCHMENT_RADIUS:
                     #get thumbnail image from ItemImage table
-
-                    market_item = MarketItem(distance = distance,title=item.title, owner_name=item.owner.full_name, price_per_day=item.price_per_day, image=item.image)
+                    item_image = models.ItemImage.objects.filter(item = item, is_thumbnail = True).first()
+                    #create pre signed url
+                    pre_signed_url = s3.url(item_image.image.name, expire=3600)
+                    print(f'pre signed url: {pre_signed_url}')
+                    #formatting of url is shite, temp fix
+                    pre_signed_url = pre_signed_url.replace("https://","")
+                    market_item = MarketViewItem(id = item.id,distance = distance,title=item.title, owner_name=item.owner.full_name, price_per_day=item.price_per_day, image_url=pre_signed_url)
                     nearby_items.append(market_item)
 
         # Django Rest Framework can automatically deal with single object inputed and a list of them, we don't need to modify the serializer

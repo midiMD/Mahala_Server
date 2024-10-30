@@ -19,10 +19,11 @@ def fetch_house_info(postcode, street, house_number):
         print(response.text)
         return None
 @dataclass
-class MarketItem():
+class MarketViewItem():
+    id: int
     distance: float
     title: str
     owner_name: str
     price_per_day: float
-    image: str
+    image_url: str
     

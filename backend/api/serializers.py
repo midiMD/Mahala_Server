@@ -95,7 +95,7 @@ class MarketItemSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     title = serializers.CharField(read_only=True)
     price_per_day = serializers.FloatField(read_only=True)
-    image = serializers.CharField(read_only=True)   
+    image_url = serializers.CharField(read_only=True)   
     distance = serializers.FloatField(read_only=True)
     
 
