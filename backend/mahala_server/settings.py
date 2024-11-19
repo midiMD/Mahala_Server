@@ -133,10 +133,12 @@ ITEM_IMAGES_STORAGE = "api.storage.S3ItemImagesStorage"
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
+#AWS_ACCESS_URL = os.getenv("AWS_ACCESS_URL")
 AWS_S3_USE_SSL=False
-AWS_S3_URL = os.getenv("AWS_S3_URL")
+#AWS_S3_URL = os.getenv("AWS_S3_URL")
 AWS_S3_FILE_OVERWRITE = True # when uploaded, files with the same name will overwrite each other
-AWS_ACCESS_URL = AWS_S3_URL+"/"+AWS_STORAGE_BUCKET_NAME
+AWS_S3_ENDPOINT_URL = os.getenv("AWS_S3_ENDPOINT_URL")
+AWS_ACCESS_URL = AWS_S3_ENDPOINT_URL+"/"+AWS_STORAGE_BUCKET_NAME
 
 '''
 For models with ImageField or FileField, files will automatically be uploaded to S3 with the configured settings. 

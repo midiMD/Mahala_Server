@@ -54,7 +54,9 @@ class MarketView(views.APIView):
 
         # Django Rest Framework can automatically deal with single object inputed and a list of them, we don't need to modify the serializer
         serializer = MarketItemSerializer(nearby_items, many=True)  # Serialize nearby items
-        return Response(serializer.data)
+        response = Response(serializer.data)
+        print(response.data)
+        return response
 
 class UserView(views.APIView):
     # First app call if a token is present

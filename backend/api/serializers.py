@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import House, Item, CustomUser
+from .models import Category, House, Item, CustomUser
 from rest_framework.fields import EmailField,CharField
 from .utils import *
 
@@ -44,51 +44,33 @@ class UserSerializer(serializers.ModelSerializer):
 from django.contrib.auth import authenticate
 
 
-# class LoginSerializer(serializers.Serializer):
-#     """
-#     This serializer defines two fields for authentication:
-#       * username
-#       * password.
-#     It will try to authenticate the user with when validated.
-#     """
-#     email = serializers.EmailField()
-#     password = serializers.CharField(write_only=True)
-
-#     def validate(self, data):
-#         username = data.get('email')
-#         password = data.get('password')
-
-#         if username and password:
-#             print(username)
-#             print(password)
-#             print(self.context.get("request"))
-#             user = authenticate(request=self.context.get('request'),
-#                                 username=username, password=password)
-#             if not user:
-#                 msg = ('Unable to log in with provided credentials.')
-#                 raise serializers.ValidationError(msg, code='authorization')
-#         else:
-#             msg = ('Must include "username" and "password".')
-#             raise serializers.ValidationError(msg, code='authorization')
-
-#         data['user'] = user
-#         return data
-#in inventory tab
-
-
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['category_id']
 
 class ItemSerializer(serializers.ModelSerializer):
-    #owner = UserSerializer(many=False,required =True)  # Read-only for owner field
     owner = serializers.ReadOnlyField(source='owner.username')
+    categories = CategorySerializer(many= True,read_only =True)
+    category_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        write_only=True,
+        required=False
+    )
     class Meta:
         model = Item
-        fields = ['id', 'owner', 'price_per_day', 'title',"description",'category', 'image',"date_added"]
+        fields = ['id', 'owner', 'price_per_day', 'title',"description",'categories', 'image',"date_added"]
         read_only_fields = ["owner"]
     def create(self, validated_data):
         # owner_data = validated_data.pop('owner')
         # owner, _ = CustomUser.objects.get(owner_data)
+        category_ids = validated_data.pop('category_ids', [])
+
         item = Item.objects.create(**validated_data)
+        categories = Category.objects.filter(category_id__in=category_ids)
+        item.categories.set(categories)
         return item
+    
 class MarketItemSerializer(serializers.Serializer):
     # Django Rest Framework can automatically deal with single object inputed and a list of them, we don't need to modify the serializer
     owner_name = serializers.CharField(read_only=True)

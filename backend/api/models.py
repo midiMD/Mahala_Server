@@ -70,7 +70,7 @@ class UserManager(BaseUserManager):
         user = self.model(
             email=self.normalize_email(email),
             full_name=full_name,
-            house = House.objects.get(pk="ChIJOyVl-TEOdkgR2CgZ9IpKAfI"), #example house, first house
+            house = House.objects.first()  # get(pk="ChIJ12cums4adkgRjkncD43eWNQ"), #example house, first house
         )
         user.is_admin = True
         user.is_staff = True
@@ -107,14 +107,17 @@ class CustomUser(AbstractBaseUser):
 
     def is_verified(self):
         return self.is_verified
-    
+
+class Category(models.Model):
+    category_id = models.IntegerField(unique=True)  # The distinct integer representing the category
+    name = models.CharField(max_length=100)  # The name of the category
 class Item(models.Model):
     owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     price_per_day = models.DecimalField(max_digits=6, decimal_places=2)
     date_added = models.DateTimeField(verbose_name="date added", auto_now_add=True)
     title = models.CharField(max_length=100,null = False)    
     description = models.TextField(null = True)
-    category = models.CharField(max_length=50)
+    categories = models.ManyToManyField(Category,blank =True)
     def __str__(self) -> str:
         return f'Item {self.title}'
     
@@ -129,7 +132,7 @@ class ItemImage(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     item = models.ForeignKey(Item, related_name='images', on_delete=models.CASCADE, db_index=True)
     is_thumbnail = models.BooleanField(default=False)
-    image = models.ImageField(upload_to=item_image_upload_path)
+    image = models.ImageField(upload_to=item_image_upload_path  )
     display_order = models.IntegerField(default=0)
     #delete from s3 as well when deleting image record from db
     def delete(self, *args, **kwargs):
