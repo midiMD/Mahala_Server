@@ -10,7 +10,7 @@ staticfiles/
 #database
 migrations/
 *.sqlite3
-fixtures/
+#fixtures/
 
 
 # Distribution / packaging

@@ -1,0 +1,70 @@
+[
+    {
+      "id": 1,
+      "name": "Electronics"
+    },
+    {
+      "id": 2,
+      "name": "Furniture"
+    },
+    {
+      "id": 3,
+      "name": "Clothing"
+    },
+    {
+      "id": 4,
+      "name": "Books"
+    },
+    {
+      "id": 5,
+      "name": "Toys"
+    },
+    {
+      "id": 6,
+      "name": "Sports & Outdoors"
+    },
+    {
+      "id": 7,
+      "name": "Home & Garden"
+    },
+    {
+      "id": 8,
+      "name": "Pets"
+    },
+    {
+      "id": 9,
+      "name": "Musical Instruments"
+    },
+    {
+      "id": 10,
+      "name": "Office Supplies"
+    },
+    {
+      "id": 11,
+      "name": "Baby Products"
+    },
+    {
+      "id": 12,
+      "name": "Beauty & Personal Care"
+    },
+    {
+      "id": 13,
+      "name": "Health & Wellness"
+    },
+    {
+      "id": 14,
+      "name": "Art & Collectibles"
+    },
+    {
+      "id": 15,
+      "name": "Services"
+    },
+    {
+      "id": 16,
+      "name": "Tools & Equipment"
+    },
+    {
+      "id": 17,
+      "name": "Appliances"
+    }
+]
