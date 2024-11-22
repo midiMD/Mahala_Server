@@ -90,6 +90,7 @@ class CustomUser(AbstractBaseUser):
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False) # whether they have verified their address
+    password = models.CharField(max_length=128)
     house = models.ForeignKey(House, on_delete=models.PROTECT)  #we allow no house for now
     USERNAME_FIELD = "email"  # Email is the login identifier
     REQUIRED_FIELDS = ["full_name"]  

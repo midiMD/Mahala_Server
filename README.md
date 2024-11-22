@@ -54,10 +54,14 @@ Implements model changes on the database. Incremental, state-based. Do this if c
    python manage.py makemigrations
    python manage.py migrate
 ```
-run ```./migrate.sh``` as a shortcut
-2) Create default superuser by loading a fixture with it set up
+run `./migrate.sh` as a shortcut
 
-`python manage.py loaddata fixtures/admin.json`
+2) Create default superuser, other example users and example house records for testing purposes
+
+`python manage.py loaddata fixtures/defaults.json`
+
+! If adding users fails, remove all but the superuser from the database records and try doing it manually with `python manage.py add_example_users` which calls `api/management/commands/add_example_users`
+
 
 3) Load categories
 `fixtures/categories.json` defines the categories
@@ -80,6 +84,7 @@ admin
 
 ### Example data
 #### Users
+
 lady.day@gmail.com
 pass1
 

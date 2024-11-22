@@ -11,7 +11,8 @@ class HouseAdmin(admin.ModelAdmin):
 
 @admin.register(CustomUser)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'full_name', 'email', 'password',"house")
+    list_display = ('id', 'full_name', 'email',"house","password")
+    
 
 
 @admin.register(Category)

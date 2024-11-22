@@ -22,43 +22,34 @@ class Command(BaseCommand):
         )
         upload_path = item_image_upload_path(item_image, image_path)
         item_image.image = upload_path
-        #item_image.save()
 
         item_image.image.save(upload_path, open(image_path, 'rb'))
-        #item_image.save()
 
         return item_image
 
     def handle(self, *args, **options):
 
-        #try:
-            # Open and read the JSON file
-            with open(data_path, 'r') as file:
-                items = json.load(file)
-            # Create categories
-            for item in items:
-                print(f'item: {item}')
-                owner = CustomUser.objects.get(id =item["owner_id"] )
-                item_record = Item.objects.create(
-                    owner=owner,
-                    price_per_day=item['price_per_day'],
-                    title=item['title'],
-                    description=item['description']
-                )
-                for category_id in item['categories']:
-                    category = Category.objects.get(category_id=category_id)
-                    item_record.categories.add(category)
-                self.stdout.write(self.style.SUCCESS(f'Created Item: {item["title"]} of owner: {owner}'))
-                print(f'Creating ItemImage record for the item {item["title"]}')
-                self._create_item_images(item['thumbnail_path'], item_record, is_thumbnail = True)
-                self.stdout.write(self.style.SUCCESS(f'Uploaded thumbnail image : {item["thumbnail_path"]} for item : {item_record.title}'))
-                
-            self.stdout.write(self.style.SUCCESS('Successfully loaded items'))
+        
+        with open(data_path, 'r') as file:
+            items = json.load(file)
+        users= list(CustomUser.objects.all())
+        which_user = 0
+        for item in items:
+            owner = users[which_user]
+            print(f'item: {item}')
+            item_record = Item.objects.create(
+                owner=owner,
+                price_per_day=item['price_per_day'],
+                title=item['title'],
+                description=item['description']
+            )
+            for category_id in item['categories']:
+                category = Category.objects.get(category_id=category_id)
+                item_record.categories.add(category)
+            self.stdout.write(self.style.SUCCESS(f'Created Item: {item["title"]} of owner: {owner}'))
+            which_user = (which_user+1)%len(users)
+            print(f'Creating ItemImage record for the item {item["title"]} and uploading')
+            self._create_item_images(item['thumbnail_path'], item_record, is_thumbnail = True)
+            self.stdout.write(self.style.SUCCESS(f'Uploaded thumbnail image : {item["thumbnail_path"]} for item : {item_record.title}'))
             
-        # except FileNotFoundError:
-        #     self.stdout.write(self.style.ERROR(data_path+' file not found'))
-        # except json.JSONDecodeError:
-        #     self.stdout.write(self.style.ERROR('Invalid JSON format in ' + data_path))
-        # except Exception as e:
-        #     self.stdout.write(self.style.ERROR(f'Error: {str(e)}'))
-
+        self.stdout.write(self.style.SUCCESS('Successfully loaded items'))

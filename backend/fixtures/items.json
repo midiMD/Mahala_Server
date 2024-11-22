@@ -3,7 +3,6 @@
       "title": "Electric Lawnmower",
       "price_per_day": 15,
       "description": "Powerful electric lawnmower for medium-sized lawns",
-      "owner_id": 1,
       "categories": [7],
       "thumbnail_path": "fixtures/data/item_images/electric lawnmower.jpg"
     },
@@ -11,7 +10,6 @@
       "title": "Gas Lawnmower",
       "price_per_day": 20,
       "description": "Robust gas-powered lawnmower for large yards",
-      "owner_id": 2,
       "categories": [7],
       "thumbnail_path": "fixtures/data/item_images/gas lawnmower.jpeg"
     },
@@ -19,7 +17,6 @@
       "title": "Shovel",
       "price_per_day": 3,
       "description": "Heavy-duty digging shovel for garden and landscaping",
-      "owner_id": 3,
       "categories": [7],
       "thumbnail_path": "fixtures/data/item_images/shovel.jpg"
     },
@@ -27,7 +24,6 @@
       "title": "Garden Scissors",
       "price_per_day": 1,
       "description": "Precision pruning scissors for delicate garden work",
-      "owner_id": 4,
       "categories": [7],
       "thumbnail_path": "fixtures/data/item_images/garden scissors.jpg"
     },
@@ -35,7 +31,6 @@
       "title": "Gasoline Lawnmower",
       "price_per_day": 18,
       "description": "High-performance gasoline lawnmower for professional landscaping",
-      "owner_id": 5,
       "categories": [7],
       "thumbnail_path": "fixtures/data/item_images/gasoline lawnmower.jpeg"
     },
@@ -43,7 +38,6 @@
       "title": "Table",
       "price_per_day": 10,
       "description": "Sturdy plastic table suitable for outdoor events",
-      "owner_id": 6,
       "categories": [7,2],
       "thumbnail_path": "fixtures/data/item_images/table.webp"
     },
@@ -51,7 +45,6 @@
       "title": "Garden Shears",
       "price_per_day": 2,
       "description": "Professional-grade garden shears for precise trimming",
-      "owner_id": 1,
       "categories": [7],
       "thumbnail_path": "fixtures/data/item_images/garden shears.webp"
     },
@@ -59,7 +52,6 @@
       "title": "Hoe",
       "price_per_day": 4,
       "description": "Durable garden hoe for soil preparation and weeding",
-      "owner_id": 2,
       "categories": [7],
       "thumbnail_path": "fixtures/data/item_images/hoe.jpg"
     }

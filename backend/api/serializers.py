@@ -32,11 +32,12 @@ class UserSerializer(serializers.ModelSerializer):
 
 
     def create(self, validated_data):
+        print("Createing user : " + validated_data)
         house_data = validated_data.pop('house')
-
         house, _ = House.objects.get_or_create(**house_data)  # Create if needed
         house.save()
         user = CustomUser.objects.create_user(**validated_data, house=house)
+        #user.set_password(validated_data['password'])
         user.save()
         return user
 
