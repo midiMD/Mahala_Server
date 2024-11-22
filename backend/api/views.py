@@ -1,3 +1,4 @@
+from dataclasses import asdict
 import boto3
 from django.shortcuts import get_object_or_404
 from json import JSONDecodeError
@@ -9,7 +10,8 @@ from rest_framework.parsers import JSONParser
 from rest_framework.authentication import TokenAuthentication,SessionAuthentication
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import update_last_login
-
+from rest_framework import generics
+from rest_framework.renderers import JSONRenderer
 from api.utils import MarketViewItem
 from api.storage import S3ItemImagesStorage
 from . import models
@@ -20,15 +22,13 @@ CATCHMENT_RADIUS = 100000 # in meters
 class MarketView(views.APIView):
     authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
     permission_classes = [permissions.IsAuthenticated]
+    #renderer_classes = [JSONRenderer]
+    
     '''
     must have in Header of request Authorization: Token <token value>
     '''
-    def get(self, request):
-        user= request.user #if token is valid, it will return the user
-
+    def get_items(self, user,search_query, category):
         user_house = user.house
-        search_query = request.GET.get('search_query')
-        category = request.GET.get('category')
 
         # Get all items. Improvement would be to get the owners that are in the required area then filter the Items by those owners
         all_items = models.Item.objects.all()
@@ -50,13 +50,18 @@ class MarketView(views.APIView):
                     #formatting of url is shite, temp fix
                     pre_signed_url = pre_signed_url.replace("https://","")
                     market_item = MarketViewItem(id = item.id,distance = distance,title=item.title, owner_name=item.owner.full_name, price_per_day=item.price_per_day, image_url=pre_signed_url)
-                    nearby_items.append(market_item)
+                    nearby_items.append(asdict(market_item))
+        return nearby_items
 
-        # Django Rest Framework can automatically deal with single object inputed and a list of them, we don't need to modify the serializer
-        serializer = MarketItemSerializer(nearby_items, many=True)  # Serialize nearby items
+    def get(self,request):
+        user= request.user #if token is valid, it will return the user
+        search_query = request.GET.get('search_query')
+        category = request.GET.get('category')
+        items = self.get_items(user=user, search_query=search_query, category=category)
+        serializer = MarketItemSerializer(items,many=True)  # Serialize nearby items
         response = Response(serializer.data)
-        print(response.data)
         return response
+    
 
 class UserView(views.APIView):
     # First app call if a token is present

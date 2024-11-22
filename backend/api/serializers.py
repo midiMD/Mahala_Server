@@ -81,6 +81,7 @@ class MarketItemSerializer(serializers.Serializer):
     image_url = serializers.CharField(read_only=True)   
     distance = serializers.FloatField(read_only=True)
     
+    
 
 
 

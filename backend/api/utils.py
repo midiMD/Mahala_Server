@@ -28,5 +28,6 @@ class MarketViewItem():
     owner_name: str
     price_per_day: float
     image_url: str
+    
 
-print(fetch_house_info("NW15ll", "Cornwall Terrace Mews", "41"))
+#print(fetch_house_info("NW15ll", "Cornwall Terrace Mews", "41"))
