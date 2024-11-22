@@ -6,8 +6,8 @@ import json
 from django.db import IntegrityError
 from api.models import Category,House,CustomUser
 users_to_create = [
-       {"email": "lady_day@gmail.com", "password": "pass1", "full_name": "lady day"},
-       {"email": "john_coltrane@gmail.com", "password": "pass2", "full_name": "john coltrane"},
+       {"email": "lady.day@gmail.com", "password": "pass1", "full_name": "lady day"},
+       {"email": "john.coltrane@gmail.com", "password": "pass2", "full_name": "john coltrane"},
        {"email": "john.smith@gmail.com", "password": "pass3", "full_name": "john smith"},
        {"email": "flea@gmail.com", "password": "pass4", "full_name": "flea"},
        {"email": "chad@gmail.com", "password": "pass5", "full_name": "chad"}
