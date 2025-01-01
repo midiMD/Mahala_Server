@@ -83,7 +83,7 @@ class UserView(views.APIView):
 
 class UserRegistrationView(views.APIView):
     '''
-    To DO: Create token upon succesful registration
+    
     '''
     def post(self, request):
         try:
@@ -91,7 +91,9 @@ class UserRegistrationView(views.APIView):
             serializer = UserSerializer(data=data)
             serializer.is_valid(raise_exception=True)  # Raise error for invalid data
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(status=status.HTTP_201_CREATED)
+
+            # return Response(serializer.data, status=status.HTTP_201_CREATED)
         except JSONDecodeError:
             return Response(serializer.errors,status = status.HTTP_400_BAD_REQUEST)
 

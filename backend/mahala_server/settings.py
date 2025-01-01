@@ -168,7 +168,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 REST_FRAMEWORK = {
-    'EXCEPTION_HANDLER': 'rest_framework_json_api.exceptions.exception_handler',
+    #'EXCEPTION_HANDLER': 'rest_framework_json_api.exceptions.exception_handler',
+    #'EXCEPTION_HANDLER' : 'api.exceptions.custom_exception_handler',
+    "EXCEPTION_HANDLER": "drf_standardized_errors.handler.exception_handler",
     'DEFAULT_PARSER_CLASSES': (
         'rest_framework_json_api.parsers.JSONParser',
     ),

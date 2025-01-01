@@ -15,8 +15,22 @@ class HouseSerializer(serializers.ModelSerializer):
     class Meta:
         model = House
         fields = ('postcode', 'house_number', "street","apartment_number")
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        '''
+        TODO :
+        More complex House validation logic
+        '''
+        google_fetched_data = fetch_house_info(street=attrs["street"],postcode=attrs["postcode"],house_number=attrs["house_number"],apartment_number=attrs["apartment_number"])
+        try:
+            existing_house = House.objects.get(place_id = google_fetched_data["place_id"]) 
+            attrs["existing_house"] = existing_house
+        except Exception:
+            pass
+        
+        return attrs
     def create(self,validated_data):
-        google_fetched_data= fetch_house_info(**validated_data)
+        google_fetched_data= fetch_house_info(street = validated_data["street"],postcode = validated_data["postcode"],house_number = validated_data["house_number"],apartment_number = validated_data["apartment_number"])
         house = House.objects.create(**validated_data,**google_fetched_data)
         house.save()
         return house
@@ -29,15 +43,19 @@ class UserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ("id","full_name", "email", "password","house")
         extra_kwargs = {'password': {'write_only': True}}
-
+    
 
     def create(self, validated_data):
-        print("Createing user : " + validated_data)
+        print("Creating user : " , validated_data)
         house_data = validated_data.pop('house')
-        house, _ = House.objects.get_or_create(**house_data)  # Create if needed
-        house.save()
+        print("House data: ", house_data)
+        if "existing_house" in house_data:
+            house = house_data.pop("existing_house")
+        else:
+            house = House.objects.create(**house_data)
+            house.save()
+    
         user = CustomUser.objects.create_user(**validated_data, house=house)
-        #user.set_password(validated_data['password'])
         user.save()
         return user
 

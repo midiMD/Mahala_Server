@@ -2,6 +2,7 @@ import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from .utils import *
+from django.core.validators import EmailValidator
 
 from django.db import models
 import requests  # Assuming you'll use 'requests' for API calls
@@ -22,17 +23,11 @@ class House(models.Model):
         super().save(*args, **kwargs)
 
     def _fetch_coordinates(self):
-        address = f"{self.house_number}, {self.street}, {self.postcode}" 
-        api_url = f"{GOOGLE_MAPS_URL}country=gb&address={address}&key={GOOGLE_API_KEY}"
-        response = requests.get(api_url)
-
-        if response.status_code == 200:
-            data = response.json()
-            self.place_id= data.get('results')[0].get('place_id')
-            self.lat, self.lng = data.get('results')[0].get('geometry').get('location').get('lat'), data.get('results')[0].get('geometry').get('location').get('lng')
+        google_maps_result = fetch_house_info(street=self.street, house_number = self.house_number, postcode = self.postcode, apartment_number=self.apartment_number)
+        if "error" not in google_maps_result:
+            self.lat , self.lng,self.place_id= google_maps_result["lat"],google_maps_result["lng"],google_maps_result["place_id"] 
         else:
-            print(response.text)
-            pass
+            print(google_maps_result)
     
 
     def __str__(self):
@@ -91,7 +86,7 @@ class CustomUser(AbstractBaseUser):
     is_superuser = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False) # whether they have verified their address
     password = models.CharField(max_length=128)
-    house = models.ForeignKey(House, on_delete=models.PROTECT)  #we allow no house for now
+    house = models.ForeignKey(House, on_delete=models.PROTECT)
     USERNAME_FIELD = "email"  # Email is the login identifier
     REQUIRED_FIELDS = ["full_name"]  
 
@@ -102,7 +97,7 @@ class CustomUser(AbstractBaseUser):
 
     def has_perm(self, perm, obj=None):
         return self.is_admin
-
+    
     def has_module_perms(self, app_label):
         return True
 
