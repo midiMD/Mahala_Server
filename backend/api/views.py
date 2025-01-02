@@ -1,5 +1,4 @@
 from dataclasses import asdict
-import boto3
 from django.shortcuts import get_object_or_404
 from json import JSONDecodeError
 from django.http import Http404, JsonResponse
@@ -11,11 +10,13 @@ from rest_framework.authentication import TokenAuthentication,SessionAuthenticat
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import update_last_login
 from rest_framework import generics
+from api.exceptions import authentication_failed
 from rest_framework.renderers import JSONRenderer
 from api.utils import MarketViewItem
 from api.storage import S3ItemImagesStorage
 from . import models
 from .serializers import UserSerializer,ItemSerializer, MarketItemSerializer
+from drf_standardized_errors.handler import exception_handler
 
 from geopy.distance import geodesic  # To calculate distance
 CATCHMENT_RADIUS = 100000 # in meters 
@@ -74,10 +75,8 @@ class UserView(views.APIView):
         user= request.user #if token is valid, it will return the user
 
         user_house = user.house 
-
-        # Get all items
         
-        serializer = UserSerializer(user,context = {'request': request})  # Serialize nearby items
+        serializer = UserSerializer(user,context = {'request': request})  
         response = Response(serializer.data)
         return response
 
@@ -105,14 +104,18 @@ class LoginView(views.APIView):
     def post(self, request):
         try:
             data = JSONParser().parse(request)
-            user = get_object_or_404(models.CustomUser,email = data['email'])
+            user = models.CustomUser.objects.filter(email=data['email']).first()
+            
+            # user = get_object_or_404(models.CustomUser,email = data['email'])
+            if not user:
+                raise authentication_failed
             print(user)
             if not user.check_password(data['password']):
-                return Response({"detail":"Not found."},status = status.HTTP_404_NOT_FOUND)
+                raise authentication_failed
             token, created = Token.objects.get_or_create(user=user)
             update_last_login(user=user,sender = self)
             serializer = UserSerializer(instance = user)
-            return Response({"status": status.HTTP_200_OK, "Token": token.key,"user": serializer.data})
+            return Response({"Token": token.key,"user": serializer.data})
         except JSONDecodeError:
             return Response(serializer.errors,status = status.HTTP_400_BAD_REQUEST)
 
