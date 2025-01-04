@@ -17,7 +17,9 @@ urlpatterns += [
     path('login/', api_views.LoginView.as_view()),
     path('logout/', api_views.LogoutView.as_view()),
     path('market/', api_views.MarketView.as_view()),
+    path('market/item/', api_views.MarketItemDetailView.as_view()),
     path('main/', api_views.UserView.as_view()),
     path('inventory/add_item', api_views.AddItemView.as_view()),
+    path('inventory/items', api_views.InventoryItemView.as_view()),
     path('test/test1', api_views.TestView.as_view()),
 ] + static(settings.STATIC_URL, document_root=settings.BASE_DIR)

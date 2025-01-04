@@ -33,6 +33,13 @@ class MarketViewItem():
     owner_name: str
     price_per_day: float
     image_url: str
+
+@dataclass
+class InventoryItem():
+    id:int
+    title:str
+    price_per_day:float
+    thumbnail_url:str
     
 
 # print(fetch_house_info("TW34JG", "Civic Street", "18","24"))

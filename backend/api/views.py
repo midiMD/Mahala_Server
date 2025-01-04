@@ -12,14 +12,16 @@ from django.contrib.auth.models import update_last_login
 from rest_framework import generics
 from api.exceptions import authentication_failed
 from rest_framework.renderers import JSONRenderer
-from api.utils import MarketViewItem
+from api.utils import InventoryItem, MarketViewItem
 from api.storage import S3ItemImagesStorage
 from . import models
-from .serializers import UserSerializer,ItemSerializer, MarketItemSerializer
+from .serializers import InventoryItemSerializer, UserSerializer,ItemSerializer, MarketItemSerializer
 from drf_standardized_errors.handler import exception_handler
+from rest_framework.exceptions import PermissionDenied
+
 
 from geopy.distance import geodesic  # To calculate distance
-CATCHMENT_RADIUS = 100000 # in meters 
+CATCHMENT_RADIUS = 10000 # in meters 
 class MarketView(views.APIView):
     authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
     permission_classes = [permissions.IsAuthenticated]
@@ -62,6 +64,27 @@ class MarketView(views.APIView):
         serializer = MarketItemSerializer(items,many=True)  # Serialize nearby items
         response = Response(serializer.data)
         return response
+
+class MarketItemDetailView(views.APIView):
+    #respond with extra information that was not sent in MarketView
+    # currently, that's just the description of the item 
+    authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
+    permission_classes = [permissions.IsAuthenticated]
+    def get(self,request):
+        user = request.user
+        user_house = user.house
+        data = JSONParser().parse(request)
+        item_id = data["id"]
+        item = models.Item.objects.get(pk = item_id)
+        #validate the item id to check whether the request is legitimate and isn't trying to access items outside its catchment area
+        item_owner_house = item.owner.house
+        if item_owner_house:  # Check if owner has a house
+            distance = geodesic((user_house.lat, user_house.lng), (item_owner_house.lat, item_owner_house.lng)).m
+            if distance > CATCHMENT_RADIUS:
+                raise PermissionDenied(detail= "Forbidden Access.", code = "forbidden")
+        return Response({"id":item_id,
+            "description":item.description})
+
     
 
 class UserView(views.APIView):
@@ -132,7 +155,6 @@ class AddItemView(views.APIView):
     def post(self, request):
         try:
             data = JSONParser().parse(request)
-            print(f'User: {request.user}')
             serializer = ItemSerializer(data=data)
             serializer.is_valid(raise_exception=True)  # Raise error for invalid data
             print("Add item validated")
@@ -141,6 +163,38 @@ class AddItemView(views.APIView):
         except JSONDecodeError:
             print(serializer.errors)
             return Response(serializer.errors,status = status.HTTP_400_BAD_REQUEST)
+
+class InventoryItemView(views.APIView):
+    authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
+    permission_classes = [permissions.IsAuthenticated]
+    #renderer_classes = [JSONRenderer]
+    
+    '''
+    must have in Header of request Authorization: Token <token value>
+    '''
+    def get_user_items(self,user):
+        items = models.Item.objects.filter(owner=user).order_by('-date_added')
+        result = []
+        s3 = S3ItemImagesStorage()
+
+        for item in items:
+            
+            #get thumbnail image from ItemImage table
+            item_image = models.ItemImage.objects.filter(item = item, is_thumbnail = True).first()
+            #create pre signed url
+            pre_signed_url = s3.url(item_image.image.name, expire=3600)
+            print(f'pre signed url: {pre_signed_url}')
+            #formatting of url is shite, temp fix
+            pre_signed_url = pre_signed_url.replace("https://","")
+            inventory_item = InventoryItem(id =item.id, title = item.title, price_per_day = item.price_per_day, thumbnail_url = pre_signed_url)
+            result.append(asdict(inventory_item))
+        return result
+    def get(self,request):
+        user= request.user #if token is valid, we get the user
+        items = self.get_user_items(user=user)
+        serializer = InventoryItemSerializer(items,many=True)  # Serialize nearby items
+        response = Response(serializer.data)
+        return response
 
 class TestView(views.APIView):
     def get(self,request):

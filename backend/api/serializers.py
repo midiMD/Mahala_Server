@@ -98,6 +98,13 @@ class MarketItemSerializer(serializers.Serializer):
     price_per_day = serializers.FloatField(read_only=True)
     image_url = serializers.CharField(read_only=True)   
     distance = serializers.FloatField(read_only=True)
+
+class InventoryItemSerializer(serializers.Serializer):
+    # Django Rest Framework can automatically deal with single object inputed and a list of them, we don't need to modify the serializer
+    id = serializers.IntegerField(read_only=True)
+    title = serializers.CharField(read_only=True)
+    price_per_day = serializers.FloatField(read_only=True)
+    thumbnail_url = serializers.CharField(read_only=True)   
     
     
 
