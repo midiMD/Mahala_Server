@@ -73,8 +73,10 @@ class MarketItemDetailView(views.APIView):
     def get(self,request):
         user = request.user
         user_house = user.house
-        data = JSONParser().parse(request)
-        item_id = data["id"]
+        # data = JSONParser().parse(request)
+        # item_id = data["id"]
+        
+        item_id = request.GET.get("id")
         item = models.Item.objects.get(pk = item_id)
         #validate the item id to check whether the request is legitimate and isn't trying to access items outside its catchment area
         item_owner_house = item.owner.house
