@@ -1,7 +1,6 @@
 # Mahala backend
 
 # TODO
-1) Implement MarketItemsView and Serializer
 2) Devise some proper tests
 3) Implement Item adding, removing and modifying views
 4) 
