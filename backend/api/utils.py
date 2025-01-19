@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+import random
+import string
 import requests
 import os
 from dotenv import load_dotenv
@@ -40,6 +42,11 @@ class InventoryItem():
     title:str
     price_per_day:float
     thumbnail_url:str
+
+def generate_random_password(length=12):
+    """Generate a random password with letters, digits, and special characters."""
+    characters = string.ascii_letters + string.digits + "!@#$%^&*()"
+    return ''.join(random.choice(characters) for _ in range(length))
     
 
 # print(fetch_house_info("TW34JG", "Civic Street", "18","24"))

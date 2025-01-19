@@ -1,4 +1,5 @@
 from dataclasses import asdict
+from django.conf import settings
 from django.shortcuts import get_object_or_404
 from json import JSONDecodeError
 from django.http import Http404, JsonResponse
@@ -12,12 +13,13 @@ from django.contrib.auth.models import update_last_login
 from rest_framework import generics
 from api.exceptions import authentication_failed
 from rest_framework.renderers import JSONRenderer
-from api.utils import InventoryItem, MarketViewItem
+from api.utils import InventoryItem, MarketViewItem, generate_random_password
 from api.storage import S3ItemImagesStorage
 from . import models
 from .serializers import InventoryItemSerializer, UserSerializer,ItemSerializer, MarketItemSerializer
 from drf_standardized_errors.handler import exception_handler
 from rest_framework.exceptions import PermissionDenied
+from django.core.mail import send_mail
 
 
 from geopy.distance import geodesic  # To calculate distance
@@ -220,3 +222,86 @@ class TestView(views.APIView):
         #     print(e)
         #     print("Doesn't exist")
         return Response(status = status.HTTP_200_OK)
+    
+class PasswordResetView(views.APIView):
+    def post(self, request):
+        
+        data = JSONParser().parse(request)
+        email  = data.get("email")
+        if not email:
+            return Response(
+                {'error': 'Email is required'}, 
+                status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = models.CustomUser.objects.get(email = email)
+    
+        except models.CustomUser.DoesNotExist:
+            print(f"User with email : {email} doesn't exist")
+            return Response(
+                {'message': 'If the email exists, you will receive a password reset email.'}, 
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            print(f"PasswordResetView Exception: {e}")
+            return Response(
+                {'error': 'Failed to send email'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        new_password = generate_random_password(length = 4)
+        old_password = user.password
+        try:
+            send_mail(
+                subject='Password Reset',
+                message=f'Your new password is: {new_password}\n\nPlease change this password after logging in.',
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            user.set_password(new_password)
+            user.save()
+            return Response(
+                {'message': 'If the email exists, you will receive a password reset email.'}, 
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            print(f"PasswordResetView Exception: {e}")
+            print("Resetting to old password")
+            user.set_password(old_password)
+            user.save()
+            return Response(
+                {'error': 'Failed to send email'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+class PasswordChangeView(views.APIView):
+    authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
+    permission_classes = [permissions.IsAuthenticated]
+    def post(self, request):
+        data = JSONParser().parse(request)
+        user = request.user
+        old_password  = data.get("old_password")
+        new_password = data.get("new_password")
+        if not old_password or not new_password:
+            return Response(
+                {'error': 'Old password and new password required'}, 
+                status=status.HTTP_400_BAD_REQUEST)
+        if not user:
+            raise authentication_failed
+        print(user)
+        if not user.check_password(data.get("old_password")):
+            raise authentication_failed
+        user.set_password(new_password)
+        user.save()
+        return Response({"password":"Password change succesful"},status = status.HTTP_200_OK)
+
+# class EmailChangeView(views.APIView):
+#     authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
+#     permission_classes = [permissions.IsAuthenticated]
+#     def post(self,request):
+#         data = JSONParser().parse(request)
+#         user = request.user
+#         old_email = data.get("old_email")
+#         new_email = data.get("old_email")
+#         password= data.get("password")
+
