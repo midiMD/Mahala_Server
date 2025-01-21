@@ -20,7 +20,8 @@ urlpatterns += [
     path('market/item/', api_views.MarketItemDetailView.as_view()),
     path('main/', api_views.UserView.as_view()),
     path('inventory/add_item', api_views.AddItemView.as_view()),
-    path('inventory/items', api_views.InventoryItemView.as_view()),
+    path('inventory/items', api_views.InventoryView.as_view()),
+    path('inventory/items/detail', api_views.InventoryItemDetailView.as_view()),
     path('test/test1', api_views.TestView.as_view()),
     path('reset-password/',api_views.PasswordResetView.as_view()),
     path('change-password/',api_views.PasswordChangeView.as_view())

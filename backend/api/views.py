@@ -168,7 +168,7 @@ class AddItemView(views.APIView):
             print(serializer.errors)
             return Response(serializer.errors,status = status.HTTP_400_BAD_REQUEST)
 
-class InventoryItemView(views.APIView):
+class InventoryView(views.APIView):
     authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
     permission_classes = [permissions.IsAuthenticated]
     #renderer_classes = [JSONRenderer]
@@ -200,6 +200,18 @@ class InventoryItemView(views.APIView):
         response = Response(serializer.data)
         return response
 
+class InventoryItemDetailView(views.APIView):
+    authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
+    permission_classes = [permissions.IsAuthenticated]
+    def get(self,request):
+        user = request.user        
+        item_id = request.GET.get("id") # uri encoded param for GET requests
+        item = models.Item.objects.get(pk = item_id)
+        if item.owner != user:
+            raise PermissionDenied(detail= "Forbidden Access.", code = "forbidden")
+
+        return Response({"date_added" : item.date_added,
+            "description":item.description})
 class TestView(views.APIView):
     def get(self,request):
         # get the first record in ItemImage table
