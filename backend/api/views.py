@@ -1,12 +1,14 @@
 from dataclasses import asdict
+import botocore
 from django.conf import settings
+from django.forms import ValidationError
 from django.shortcuts import get_object_or_404
 from json import JSONDecodeError
 from django.http import Http404, JsonResponse
 from django.contrib.auth.decorators import login_required
 from rest_framework import views, status,permissions
 from rest_framework.response import Response
-from rest_framework.parsers import JSONParser
+from rest_framework.parsers import JSONParser,MultiPartParser,FormParser
 from rest_framework.authentication import TokenAuthentication,SessionAuthentication
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import update_last_login
@@ -18,7 +20,7 @@ from api.storage import S3ItemImagesStorage
 from . import models
 from .serializers import InventoryItemSerializer, UserSerializer,ItemSerializer, MarketItemSerializer
 from drf_standardized_errors.handler import exception_handler
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied,APIException,ParseError
 from django.core.mail import send_mail
 
 
@@ -153,20 +155,56 @@ class LogoutView(views.APIView):
         request.user.auth_token.delete()
         return Response(status = status.HTTP_200_OK)
 
-class AddItemView(views.APIView):
+class UploadItemView(views.APIView):
     authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]#
+    parser_classes = (MultiPartParser, FormParser)  # Handle multipart/form-data
     def post(self, request):
         try:
-            data = JSONParser().parse(request)
-            serializer = ItemSerializer(data=data)
-            serializer.is_valid(raise_exception=True)  # Raise error for invalid data
-            print("Add item validated")
-            serializer.save(owner = request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        except JSONDecodeError:
-            print(serializer.errors)
-            return Response(serializer.errors,status = status.HTTP_400_BAD_REQUEST)
+            user = request.user
+            data = request.data
+            data["owner"] = user
+            image = data.get("image")
+            # parse categories
+            if data.get("categories"):
+                try:
+                    categories =list(map(lambda x :int(x), data.get("categories").split(",")))
+                except Exception as e:
+                    print("Error parsing categories")
+                    raise ParseError(detail="categories attribute must be a string of comma-delimited integers")
+            #First we create Item record then we create ItemImage record 
+            item_serializer = ItemSerializer(data={"title":data.get("title"),
+                                              "description":data.get("description"),
+                                              "categories":categories,
+                                              "price_per_day":float(data.get("price")),
+                                              "owner":user})
+            item_serializer.is_valid(raise_exception=True)  # Raise error for invalid data
+            item =  item_serializer.save(owner = user)
+            print("Add item validated: ", item)
+            # create ItemImage record
+            # Initialize storage
+            storage = S3ItemImagesStorage()
+            #print(storage.connection.meta.client.head_object(Bucket= "mahala-item-images",Key = image_path))
+            # Open the image file
+            item_image = models.ItemImage.objects.create(
+                item=item,
+                is_thumbnail=True,  
+                image="temp.jpg"
+            )
+            print(f'image: {image.name}')
+            upload_path = models.item_image_upload_path(item_image, image.name)
+            item_image.image = upload_path
+            #item_image.image.save(upload_path,image)
+            storage.save(upload_path,image) # upload the imafge to S3
+            #item_image.image.save(upload_path, open(image, 'rb'))
+            print(f"Succesfully Uploaded image {upload_path} to S3")
+            return Response({"item":item_serializer.data,"item_image":{"image":upload_path}}, status=status.HTTP_201_CREATED)
+        except JSONDecodeError as e:
+            print(e)
+            raise ValidationError(message=e)
+        except botocore.exceptions.EndpointConnectionError as e:
+            print("S3 server error: {e}")
+            raise APIException(detail = "Image server connection",code = "image_server")
 
 class InventoryView(views.APIView):
     authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
@@ -305,7 +343,7 @@ class PasswordChangeView(views.APIView):
             raise authentication_failed
         user.set_password(new_password)
         user.save()
-        return Response({"password":"Password change succesful"},status = status.HTTP_200_OK)
+        return Response(status = status.HTTP_200_OK)
 
 # class EmailChangeView(views.APIView):
 #     authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking

@@ -70,23 +70,23 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class ItemSerializer(serializers.ModelSerializer):
     owner = serializers.ReadOnlyField(source='owner.username')
-    categories = CategorySerializer(many= True,read_only =True)
-    category_ids = serializers.ListField(
+    #categories = CategorySerializer(many= True,read_only =True)
+    categories= serializers.ListField(
         child=serializers.IntegerField(),
         write_only=True,
         required=False
     )
     class Meta:
         model = Item
-        fields = ['id', 'owner', 'price_per_day', 'title',"description",'categories', 'image',"date_added"]
+        fields = ['id', 'owner', 'price_per_day', 'title',"description",'categories',"date_added"]
         read_only_fields = ["owner"]
     def create(self, validated_data):
         # owner_data = validated_data.pop('owner')
         # owner, _ = CustomUser.objects.get(owner_data)
-        category_ids = validated_data.pop('category_ids', [])
+        categories = validated_data.pop('categories', [])
 
         item = Item.objects.create(**validated_data)
-        categories = Category.objects.filter(category_id__in=category_ids)
+        categories = Category.objects.filter(category_id__in=categories)
         item.categories.set(categories)
         return item
     
