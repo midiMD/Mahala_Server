@@ -1,5 +1,6 @@
 from dataclasses import asdict
 import botocore
+from django.db import transaction
 from django.conf import settings
 from django.forms import ValidationError
 from django.shortcuts import get_object_or_404
@@ -18,7 +19,7 @@ from rest_framework.renderers import JSONRenderer
 from api.utils import InventoryItem, MarketViewItem, generate_random_password
 from api.storage import S3ItemImagesStorage
 from . import models
-from .serializers import InventoryItemSerializer, UserSerializer,ItemSerializer, MarketItemSerializer
+from .serializers import InventoryItemSerializer, UploadItemSerializer, UserSerializer,ItemSerializer, MarketItemSerializer
 from drf_standardized_errors.handler import exception_handler
 from rest_framework.exceptions import PermissionDenied,APIException,ParseError
 from django.core.mail import send_mail
@@ -154,56 +155,35 @@ class LogoutView(views.APIView):
     def get(self,request):
         request.user.auth_token.delete()
         return Response(status = status.HTTP_200_OK)
-
 class UploadItemView(views.APIView):
     authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
     permission_classes = [permissions.IsAuthenticated]#
     parser_classes = (MultiPartParser, FormParser)  # Handle multipart/form-data
     def post(self, request):
+
         try:
-            user = request.user
-            data = request.data
-            data["owner"] = user
-            image = data.get("image")
-            # parse categories
-            if data.get("categories"):
-                try:
-                    categories =list(map(lambda x :int(x), data.get("categories").split(",")))
-                except Exception as e:
-                    print("Error parsing categories")
-                    raise ParseError(detail="categories attribute must be a string of comma-delimited integers")
-            #First we create Item record then we create ItemImage record 
-            item_serializer = ItemSerializer(data={"title":data.get("title"),
-                                              "description":data.get("description"),
-                                              "categories":categories,
-                                              "price_per_day":float(data.get("price")),
-                                              "owner":user})
-            item_serializer.is_valid(raise_exception=True)  # Raise error for invalid data
-            item =  item_serializer.save(owner = user)
-            print("Add item validated: ", item)
-            # create ItemImage record
-            # Initialize storage
-            storage = S3ItemImagesStorage()
-            #print(storage.connection.meta.client.head_object(Bucket= "mahala-item-images",Key = image_path))
-            # Open the image file
-            item_image = models.ItemImage.objects.create(
-                item=item,
-                is_thumbnail=True,  
-                image="temp.jpg"
-            )
-            print(f'image: {image.name}')
-            upload_path = models.item_image_upload_path(item_image, image.name)
-            item_image.image = upload_path
-            #item_image.image.save(upload_path,image)
-            storage.save(upload_path,image) # upload the imafge to S3
-            #item_image.image.save(upload_path, open(image, 'rb'))
-            print(f"Succesfully Uploaded image {upload_path} to S3")
-            return Response({"item":item_serializer.data,"item_image":{"image":upload_path}}, status=status.HTTP_201_CREATED)
+            with transaction.atomic(): #reverts if any exception
+                user = request.user
+                data = request.data
+                #data["owner"] = user
+                #First we create Item record then we create ItemImage record 
+                serializer = UploadItemSerializer(data = data)
+                serializer.is_valid(raise_exception=True)  # Raise error for invalid data
+                #print(serializer.validated_data)
+                #data = serializer.validated_data
+                #print(data)
+                objects_created = serializer.save(owner = user)
+                # print(objects_created)
+                #print(objects_created)
+                return Response(status=status.HTTP_201_CREATED)
         except JSONDecodeError as e:
             print(e)
             raise ValidationError(message=e)
+
         except botocore.exceptions.EndpointConnectionError as e:
-            print("S3 server error: {e}")
+            print(f"S3 server error: {e}")
+            # don;t acc need to implement roll back on the upload to server because the uploading is the last part and only starts if
+            # everything else is valid
             raise APIException(detail = "Image server connection",code = "image_server")
 
 class InventoryView(views.APIView):
