@@ -19,7 +19,7 @@ from rest_framework.renderers import JSONRenderer
 from api.utils import InventoryItem, MarketViewItem, generate_random_password
 from api.storage import S3ItemImagesStorage
 from . import models
-from .serializers import InventoryItemSerializer, ItemDeleteSerializer, UploadItemSerializer, UserSerializer,ItemSerializer, MarketItemSerializer
+from .serializers import InventoryItemSerializer, ItemDeleteSerializer, PasswordChangeSerializer, UploadItemSerializer, UserSerializer,ItemSerializer, MarketItemSerializer
 from drf_standardized_errors.handler import exception_handler
 from rest_framework.exceptions import PermissionDenied,APIException,ParseError,NotFound
 from django.core.mail import send_mail
@@ -307,22 +307,15 @@ class PasswordResetView(views.APIView):
 class PasswordChangeView(views.APIView):
     authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
     permission_classes = [permissions.IsAuthenticated]
-    def post(self, request):
-        data = JSONParser().parse(request)
+    def put(self, request):
+        #data = JSONParser().parse(request)
         user = request.user
-        old_password  = data.get("old_password")
-        new_password = data.get("new_password")
-        if not old_password or not new_password:
-            return Response(
-                {'error': 'Old password and new password required'}, 
-                status=status.HTTP_400_BAD_REQUEST)
         if not user:
             raise authentication_failed
-        print(user)
-        if not user.check_password(data.get("old_password")):
-            raise authentication_failed
-        user.set_password(new_password)
-        user.save()
+        serializer = PasswordChangeSerializer(data=request.GET, context={'user': user})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        print(f"Success changed password for user: {user}")
         return Response(status = status.HTTP_200_OK)
 class ItemDeleteView(views.APIView):
     authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking

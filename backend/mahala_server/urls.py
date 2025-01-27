@@ -25,5 +25,5 @@ urlpatterns += [
     path('inventory/items/delete', api_views.ItemDeleteView.as_view()),
     path('test/test1', api_views.TestView.as_view()),
     path('password-reset/',api_views.PasswordResetView.as_view()),
-    path('password-change/',api_views.PasswordChangeView.as_view())
+    path('user/password-change/',api_views.PasswordChangeView.as_view())
 ] + static(settings.STATIC_URL, document_root=settings.BASE_DIR)

@@ -1,5 +1,6 @@
 import botocore
 from django.forms import ValidationError
+from rest_framework.exceptions import NotFound
 from rest_framework import serializers
 from .models import Category, House, Item, CustomUser, ItemImage
 from rest_framework.fields import EmailField,CharField
@@ -182,3 +183,20 @@ class InventoryItemSerializer(serializers.Serializer):
 
 
 
+class PasswordChangeSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+
+    def validate_old_password(self, value):
+        user = self.context['user']  # Retrieve the logged-in user from the context
+        if not user.check_password(value):  # Validate the old password
+            raise NotFound("Old password doesn't match")
+        return value
+
+
+    def save(self, **kwargs):
+        user = self.context['user'] # Retrieve the logged-in user
+        new_password = self.validated_data['new_password']
+        user.set_password(new_password)  # Update the user's password
+        user.save()
+        return user
