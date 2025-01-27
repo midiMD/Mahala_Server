@@ -39,6 +39,15 @@ class HouseSerializer(serializers.ModelSerializer):
         house.save()
         return house
 
+class ItemDeleteSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+    def validate_id(self, value):
+        try:
+            item = Item.objects.get(pk=value)
+        except Item.DoesNotExist:
+            raise serializers.ValidationError("Item with this ID does not exist.")
+        return value
 
 class UserSerializer(serializers.ModelSerializer):
 

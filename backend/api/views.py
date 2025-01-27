@@ -19,9 +19,9 @@ from rest_framework.renderers import JSONRenderer
 from api.utils import InventoryItem, MarketViewItem, generate_random_password
 from api.storage import S3ItemImagesStorage
 from . import models
-from .serializers import InventoryItemSerializer, UploadItemSerializer, UserSerializer,ItemSerializer, MarketItemSerializer
+from .serializers import InventoryItemSerializer, ItemDeleteSerializer, UploadItemSerializer, UserSerializer,ItemSerializer, MarketItemSerializer
 from drf_standardized_errors.handler import exception_handler
-from rest_framework.exceptions import PermissionDenied,APIException,ParseError
+from rest_framework.exceptions import PermissionDenied,APIException,ParseError,NotFound
 from django.core.mail import send_mail
 
 
@@ -324,7 +324,35 @@ class PasswordChangeView(views.APIView):
         user.set_password(new_password)
         user.save()
         return Response(status = status.HTTP_200_OK)
+class ItemDeleteView(views.APIView):
+    authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
+    permission_classes = [permissions.IsAuthenticated]
+    def delete(self, request, *args, **kwargs):
+        user = request.user
+        if not user:
+            raise authentication_failed
+        serializer = ItemDeleteSerializer(data=request.GET) #url encoded params
+        serializer.is_valid(raise_exception=True)
+        
+        item_id = serializer.validated_data['id']
+        try:
+            item = models.Item.objects.get(pk=item_id)
+            # Delete all associated ItemImage objects
+            item_images = models.ItemImage.objects.filter(item=item)
+            for item_image in item_images:
+                item_image.delete()  # This will also delete the image from the storage backend
+            # Finally, delete the Item object
+            item.delete()
+            return Response( status=status.HTTP_204_NO_CONTENT)
+        except models.Item.DoesNotExist:
+            raise NotFound(detail="Item not found")
+        except botocore.exceptions.EndpointConnectionError as e:
+            print(f"S3 server error: {e}")
+            raise APIException(detail = "Image server connection",code = "image_server")
+        except Exception as e:
+            raise APIException(detail = e)
 
+        
 # class EmailChangeView(views.APIView):
 #     authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
 #     permission_classes = [permissions.IsAuthenticated]

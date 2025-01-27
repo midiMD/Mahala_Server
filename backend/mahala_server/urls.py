@@ -22,6 +22,7 @@ urlpatterns += [
     path('inventory/upload', api_views.UploadItemView.as_view()),
     path('inventory/items', api_views.InventoryView.as_view()),
     path('inventory/items/detail', api_views.InventoryItemDetailView.as_view()),
+    path('inventory/items/delete', api_views.ItemDeleteView.as_view()),
     path('test/test1', api_views.TestView.as_view()),
     path('password-reset/',api_views.PasswordResetView.as_view()),
     path('password-change/',api_views.PasswordChangeView.as_view())

@@ -120,7 +120,7 @@ class Item(models.Model):
 def item_image_upload_path(instance, filename):
     # Extract the original file extension
     extension = filename.split('.')[-1]
-    # Create a unique filename using UUID
+    # Create a unique filename using UUID   
     new_filename = f"{instance.id}.{extension}"
     # Organize images by item ID
     return f"items/{instance.item.id}/images/{new_filename}"
