@@ -145,7 +145,8 @@ class LoginView(views.APIView):
             token, created = Token.objects.get_or_create(user=user)
             update_last_login(user=user,sender = self)
             serializer = UserSerializer(instance = user)
-            return Response({"Token": token.key,"user": serializer.data})
+            #return Response({"Token": token.key,"user": serializer.data})
+            return Response({"Token":token.key,"is_address_verified":user.is_verified})
         except JSONDecodeError:
             return Response(serializer.errors,status = status.HTTP_400_BAD_REQUEST)
 
@@ -308,7 +309,6 @@ class PasswordChangeView(views.APIView):
     authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
     permission_classes = [permissions.IsAuthenticated]
     def put(self, request):
-        #data = JSONParser().parse(request)
         user = request.user
         if not user:
             raise authentication_failed
@@ -356,3 +356,14 @@ class ItemDeleteView(views.APIView):
 #         new_email = data.get("old_email")
 #         password= data.get("password")
 
+class ValidateTokenView(views.APIView):
+    authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user  # DRF automatically sets this if the token is valid
+        if not user:
+            raise authentication_failed
+        return Response(status=status.HTTP_204_NO_CONTENT)
+        
+        

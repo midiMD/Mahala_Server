@@ -11,7 +11,7 @@ class HouseAdmin(admin.ModelAdmin):
 
 @admin.register(CustomUser)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'full_name', 'email',"house","password")
+    list_display = ('id', 'full_name', 'email',"house","password","is_verified")
     
 
 
