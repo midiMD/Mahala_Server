@@ -126,6 +126,24 @@ class UserRegistrationView(views.APIView):
         except JSONDecodeError:
             return Response(serializer.errors,status = status.HTTP_400_BAD_REQUEST)
 
+class ValidateTokenView(views.APIView):
+    authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user  # DRF automatically sets this if the token is valid    
+        if not user:
+            raise authentication_failed
+        return Response({"is_address_verified":user.house_is_verified},status=status.HTTP_202_ACCEPTED)
+class GetUserView(views.APIView):
+    authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user  # DRF automatically sets this if the token is valid    
+        if not user:
+            raise authentication_failed
+        return Response({"user":user},status=status.HTTP_202_ACCEPTED)
 
 class LoginView(views.APIView):
     # This view should be accessible also for unauthenticated users.
@@ -146,7 +164,7 @@ class LoginView(views.APIView):
             update_last_login(user=user,sender = self)
             serializer = UserSerializer(instance = user)
             #return Response({"Token": token.key,"user": serializer.data})
-            return Response({"Token":token.key,"is_address_verified":user.is_verified})
+            return Response({"Token":token.key,"is_address_verified":user.house_is_verified})
         except JSONDecodeError:
             return Response(serializer.errors,status = status.HTTP_400_BAD_REQUEST)
 
@@ -345,6 +363,7 @@ class ItemDeleteView(views.APIView):
         except Exception as e:
             raise APIException(detail = e)
 
+
         
 # class EmailChangeView(views.APIView):
 #     authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
@@ -356,14 +375,3 @@ class ItemDeleteView(views.APIView):
 #         new_email = data.get("old_email")
 #         password= data.get("password")
 
-class ValidateTokenView(views.APIView):
-    authentication_classes = [SessionAuthentication,TokenAuthentication] # Will automatically handle the authorisation token checking
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request):
-        user = request.user  # DRF automatically sets this if the token is valid
-        if not user:
-            raise authentication_failed
-        return Response(status=status.HTTP_204_NO_CONTENT)
-        
-        

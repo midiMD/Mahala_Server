@@ -1,2 +1,2 @@
 #! /bin/bash
-python ./manage.py runserver
+daphne mahala_server.asgi:application -p 8000

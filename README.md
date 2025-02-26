@@ -55,7 +55,7 @@ Implements model changes on the database. Incremental, state-based. Do this if c
 ```
 run `./migrate.sh` as a shortcut
 
-2) Create default superuser, other example users and example house records for testing purposes
+2) Create default superuser, other example users and example house records for testing purposes.
 
 `python manage.py loaddata fixtures/defaults.json`
 
@@ -63,17 +63,22 @@ run `./migrate.sh` as a shortcut
 
 
 3) Load categories
-`fixtures/categories.json` defines the categories
-`api/management/commands/` contains custom subcommands that can be invoked with `manage.py` as below
+
 `python manage.py add_categories` will create records for every category in the file 
+`fixtures/categories.json` defines the categories (IDs and title)
 
-4) Run server
-```python manage.py runserver```   
-Shortcut ```./runserver.sh```
+`api/management/commands/` contains custom subcommands that can be invoked with `manage.py` as below
 
-5) Add mock data
+4) Load example items
 
 `python manage.py add_example_items`  will create some example items as given by `/fixtures/items.json`. **requires S3 server running** as it will also upload the corresponding images for the items
+
+
+4) Run server
+```python manage.py runserver```
+```daphne mahala_server.asgi:application -p 8000```  daphne manages both the websocket endpoints and the http endpoints
+Shortcut ```./runserver.sh```
+
 
 Log into Django admin portal on `http://127.0.0.1:8000/admin/` and add records as needed
 Superuser details:

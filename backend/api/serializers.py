@@ -74,9 +74,6 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 
-from django.contrib.auth import authenticate
-
-
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category

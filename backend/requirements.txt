@@ -13,3 +13,4 @@ Pillow==10.2.0 # Adding item images to db
 geopy==2.4.1 # calculating distance between houses
 django-storages
 boto3
+daphne==4.1.2

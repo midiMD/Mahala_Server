@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = True    # doesn't server static files(e..g for admin portal) when set to False
 
 ALLOWED_HOSTS = ["10.0.2.2","127.0.0.1"]
 
@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'django_filters', #Used with DRF
     'rest_framework', #DRF package
     'api',
+    "chat",
+    "channels"
 ]
 
 MIDDLEWARE = [
@@ -128,7 +130,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-
 ITEM_IMAGES_STORAGE = "api.storage.S3ItemImagesStorage"
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
@@ -203,6 +204,14 @@ REST_FRAMEWORK = {
         'rest_framework_json_api.renderers.JSONRenderer',
     ),
     'TEST_REQUEST_DEFAULT_FORMAT': 'vnd.api+json'
+}
+
+ASGI_APPLICATION = 'mahala_server.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
 }
 
 AUTH_USER_MODEL = "api.CustomUser"
