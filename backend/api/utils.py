@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
-print("Google API key : ", GOOGLE_API_KEY)
+#print("Google API key : ", GOOGLE_API_KEY)
 GOOGLE_MAPS_URL = "https://maps.googleapis.com/maps/api/geocode/json?" # Base URL for Google geocoding API
 def fetch_house_info(postcode, street, house_number,apartment_number):
     if apartment_number != "":

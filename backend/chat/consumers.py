@@ -150,7 +150,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'room_id': room_id,
                 'messages': messages
             }))
-        elif action== "subscribe_to_room":
+        elif action== "subscribe_to_room": # subscribe currently authenticated user to a particular room
+            # This will be called when another user sends a message to this user
+            # and the user is not currently in the room.
             room_id = data.get('room_id')
             room = Room.objects.get(id=room_id)
             room_group_name = f"chat_{room.id}"
@@ -182,8 +184,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                         'type': 'room_created',
                         'room_id': room.id
                     }))
-                    # Notify User B about the new room so they can add themselves to the group
+                    # Notify User B's Consumer instance about the new room so they can add themselves to the Channel group of that room
                     other_user_group_name = f"user_{other_user.id}"
+                
                     await self.channel_layer.group_send(
                         other_user_group_name,
                         {
@@ -215,7 +218,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'type': 'message_success',
                     'room_id': room_id
                 }))
-            # Broadcast to room group
+            # Broadcast to room Channel group
             await self.channel_layer.group_send(
                 f"chat_{room_id}",
                 {
@@ -223,6 +226,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'message': message
                 }
             )
+    # All of these below are responses to group_send calls i.e. on the backend, when another consumer instance(i..e another user's) wants to talk to this user's consumer instance
     async def receive(self, text_data):
         data = json.loads(text_data)
         try:
@@ -238,14 +242,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'message': error_message,
 
             }))
-# These are 
     async def chat_message(self, event): # in response to group_send of type = chat_message
         message = event['message']
         await self.send(json.dumps({
             'type': 'new_message',
             'message': message
         }))
-
+    # In response to group_send of type = added_to_room_notification
     async def added_to_room_notification(self, event):
         # add the user's channel to the room group
         room_id = event['room_id']

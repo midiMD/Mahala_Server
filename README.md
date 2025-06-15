@@ -78,6 +78,7 @@ run `./migrate.sh` as a shortcut
 ```python manage.py runserver```
 ```daphne mahala_server.asgi:application -p 8000```  daphne manages both the websocket endpoints and the http endpoints
 Shortcut ```./runserver.sh```
+When ran locally, the websocket will be accessible on `ws://localhost:8000/ws/chat/`
 
 
 Log into Django admin portal on `http://127.0.0.1:8000/admin/` and add records as needed
@@ -85,6 +86,10 @@ Superuser details:
 
 admin@mahala.us
 admin
+
+### Chat Websocket actions
+
+
 
 ### Example data
 #### Users
