@@ -171,9 +171,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
             other_user = await self.get_user_from_user_id(data.get('other_id'))
             print(f'''Other user: {other_user}''')
+            print(f"self.user:{self.user}")
             if other_user is None or self.user is None:
                 await self.send(json.dumps({
-                    "error":"not_found"
+                    "type":"error",
+                    "message":"Can't find the other user "
                 }))
             else:
                 room = await self.get_room_by_users(self.user, other_user)
@@ -197,7 +199,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 else:
                     room_messages = await self.get_room_messages(room.id,self.user)
                     await self.send(json.dumps({
-                        'type': 'messages',
+                        'type': 'room_data',
                         'room_id': room.id,
                         'messages': room_messages
                     }))
