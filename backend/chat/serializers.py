@@ -11,15 +11,21 @@ class UserSerializer(serializers.ModelSerializer):
 
 class MessageSerializer(serializers.ModelSerializer):
     sender = UserSerializer()
+    room_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Message
-        fields = ['id', 'content', 'sender', 'timestamp', 'unread']
+        fields = ['id', 'content', 'sender', 'room_id','timestamp', 'unread']
+
+    def get_room_id(self,obj):
+
+        return obj.room.id
 
 class RoomSerializer(serializers.ModelSerializer):
     other_user = serializers.SerializerMethodField()
     last_message = serializers.SerializerMethodField()
     unread_messages = serializers.SerializerMethodField()
+    id = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Room
