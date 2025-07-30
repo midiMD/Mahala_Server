@@ -93,6 +93,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         ).exclude(sender=user).update(unread=False)
         
         return MessageSerializer(messages, many=True).data
+    
+
 
     @database_sync_to_async
     def save_message(self, room_id, user, content):
@@ -150,6 +152,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'room_id': room_id,
                 'messages': messages
             }))
+        elif action == 'fetch_rooms':
+            room_id = data.get('room_id')
+            rooms = await self.get_user_rooms(self.user)
+            await self.send(json.dumps({
+                'type': 'rooms',
+                'rooms': rooms
+            }))
+        
         elif action== "subscribe_to_room": # subscribe currently authenticated user to a particular room
             # This will be called when another user sends a message to this user
             # and the user is not currently in the room.
